@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+
+  <style>
+    :root {
+      --light-square: #f0d9b5;
+      --dark-square: #b58863;
+      --board-size: 560px;
+      --timer-normal-color: #333;
+      --timer-low-time-color: #d32f2f;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f4f4f4;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 8px 15px rgba(0,0,0,.1);
+      padding: 25px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .timer-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      font-size: 1.5em;
+      font-weight: 700;
+      color: var(--timer-normal-color);
+      background: #f0f0f0;
+      padding: 10px 15px;
+      border-radius: 8px;
+      min-width: 120px;
+      text-align: center;
+      transition: all .3s ease;
+    }
+
+    .timer.low-time {
+      color: var(--timer-low-time-color);
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.05); }
+    }
+
+    #player-info,
+    #game-status {
+      margin: 6px 0;
+      font-weight: 600;
+    }
+
+    .chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      width: var(--board-size);
+      height: var(--board-size);
+      border: 10px solid #5d4037;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .square {
+      width: calc(var(--board-size) / 8);
+      height: calc(var(--board-size) / 8);
+    }
+
+    .square.light { background: var(--light-square); }
+    .square.dark  { background: var(--dark-square); }
+
+    .piece {
+      width: 100%;
+      height: 100%;
+      font-size: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: grab;
+      user-select: none;
+    }
+
+
+    .piece.white {
+      color: #fff;
+      text-shadow: 0 0 2px rgba(0,0,0,.6);
+    }
+
+    .piece.black { color: #000; }
+
+    .white-piece {
+      color: #ffffff;
+      text-shadow: 0 0 2px black; /* makes white stand out */
+    }
+
+    .black-piece {
+      color: #000000;
+    }
+
+    .piece.dragging { opacity: .5; }
+
+    .game-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #f6f6f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="timer-container">
+      <div class="timer white-timer">
+        White: <span id="white-timer">10:00</span>
+      </div>
+      <div class="timer black-timer">
+        Black: <span id="black-timer">10:00</span>
+      </div>
+    </div>
+
+    <div id="player-info">Waiting for players...</div>
+    <div id="game-status"></div>
+
+    <div class="chessboard"></div>
+
+    <div class="game-controls">
+      <button id="offer-draw">Offer Draw</button>
+      <button id="resign">Resign</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <!-- chess.js v0.10.3 exposes global Chess() -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="/javascript/chess_game.js"></script>
+</body>
+</html>

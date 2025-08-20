@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "chess.js": "^1.0.0",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "init": "^0.1.2",
+    "socket.io": "^4.8.1"
+  },
+  "name": "chess",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
