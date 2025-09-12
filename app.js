@@ -9,29 +9,33 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+// configure app
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.static(path.join(__dirname, 'public')));
+
 class ChessGame {
   constructor() {
     this.chess = new Chess();
-    this.players = { white: null, black: null }; // socket ids
-    this.timers = { white: 600, black: 600 };    // 10 mins each
+    this.players = { white: null, black: null };
+    this.timers = { white: 600, black: 600 };
     this.timerIntervals = {};
   }
 
   startTimer(color) {
-    // color: 'white' or 'black'
     this.stopTimers();
     this.timerIntervals[color] = setInterval(() => {
       this.timers[color]--;
       io.emit('timerUpdate', this.timers);
       if (this.timers[color] <= 0) {
         this.stopTimers();
-        io.emit('timeUp', color[0]); // 'w' or 'b' feel free to keep 'white'/'black'
+        io.emit('timeUp', color[0]); // 'w' or 'b'
       }
     }, 1000);
   }
 
   stopTimers() {
-    Object.values(this.timerIntervals).forEach((interval) => clearInterval(interval));
+    Object.values(this.timerIntervals).forEach(clearInterval);
     this.timerIntervals = {};
   }
 
@@ -39,21 +43,28 @@ class ChessGame {
     this.chess = new Chess();
     this.timers = { white: 600, black: 600 };
     this.stopTimers();
+    this.players = { white: null, black: null };
   }
 }
 
 const game = new ChessGame();
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
-
+// routes
 app.get('/', (req, res) => {
   res.render('index', { title: 'Chess Game' });
 });
 
+// reset endpoint
+app.get('/reset', (req, res) => {
+  game.reset();
+  io.emit('reset', {
+    fen: game.chess.fen(),
+    timers: game.timers,
+  });
+  res.send('Game has been reset!');
+});
+
 io.on('connection', (socket) => {
-  // Assign roles
   if (!game.players.white) {
     game.players.white = socket.id;
     socket.emit('playerRole', 'w');
@@ -62,14 +73,12 @@ io.on('connection', (socket) => {
     game.players.black = socket.id;
     socket.emit('playerRole', 'b');
     socket.playerRole = 'b';
-    // Start white's timer when both players are in
     game.startTimer('white');
   } else {
     socket.emit('spectatorRole');
     socket.playerRole = 'spectator';
   }
 
-  // Send current state
   socket.emit('gameState', {
     fen: game.chess.fen(),
     timers: game.timers,
@@ -77,12 +86,10 @@ io.on('connection', (socket) => {
 
   socket.on('move', (move) => {
     try {
-      // Move permission: only the side to move can send a move
       const turnColor = game.chess.turn() === 'w' ? 'white' : 'black';
       const allowedSocketId = game.players[turnColor];
       if (socket.id !== allowedSocketId) return;
 
-      // Ensure promotion default (e.g., to queen)
       const serverMove = {
         from: move.from,
         to: move.to,
@@ -95,25 +102,19 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Switch timers
       game.stopTimers();
       const nextColor = turnColor === 'white' ? 'black' : 'white';
       game.startTimer(nextColor);
 
-      // Broadcast updated state
       io.emit('move', {
         move: serverMove,
         fen: game.chess.fen(),
         timers: game.timers,
       });
 
-      // End conditions
       if (game.chess.in_checkmate()) {
         game.stopTimers();
-        io.emit(
-          'gameOver',
-          `Checkmate! ${turnColor === 'white' ? 'White' : 'Black'} wins`
-        );
+        io.emit('gameOver', `Checkmate! ${turnColor === 'white' ? 'White' : 'Black'} wins`);
       } else if (game.chess.in_stalemate()) {
         game.stopTimers();
         io.emit('gameOver', 'Stalemate!');
@@ -140,8 +141,7 @@ io.on('connection', (socket) => {
     game.stopTimers();
     const resigningColor =
       socket.id === game.players.white ? 'White' :
-      socket.id === game.players.black ? 'Black' :
-      'Player';
+      socket.id === game.players.black ? 'Black' : 'Player';
     const winner =
       resigningColor === 'White' ? 'Black' :
       resigningColor === 'Black' ? 'White' : 'Opponent';
@@ -149,7 +149,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Clean up if a player leaves
     if (socket.id === game.players.white) {
       game.players.white = null;
       game.stopTimers();
