@@ -2,160 +2,343 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Chess Game</title>
 
   <style>
     :root {
       --light-square: #f0d9b5;
       --dark-square: #b58863;
-      --board-size: 560px;
       --timer-normal-color: #333;
       --timer-low-time-color: #d32f2f;
+      --board-border: #5d4037;
+      --bg-color: #f4f4f4;
+      --card-bg: #fff;
+      --shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 8px;
+      background: var(--bg-color);
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      background: #f4f4f4;
+      touch-action: manipulation;
     }
 
     .game-container {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #fff;
-      border-radius: 15px;
-      box-shadow: 0 8px 15px rgba(0,0,0,.1);
-      padding: 25px;
-      width: 100%;
-      max-width: 600px;
     }
 
+    /* Timer Section */
     .timer-container {
       display: flex;
       justify-content: space-between;
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
+      gap: 8px;
     }
 
     .timer {
+      flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      font-size: 1.5em;
-      font-weight: 700;
+      font-size: 0.9em;
+      font-weight: 600;
       color: var(--timer-normal-color);
-      background: #f0f0f0;
-      padding: 10px 15px;
+      background: #f8f8f8;
+      padding: 8px 4px;
       border-radius: 8px;
-      min-width: 120px;
       text-align: center;
-      transition: all .3s ease;
+      transition: all 0.3s ease;
+      min-height: 50px;
+      justify-content: center;
+    }
+
+    .timer-label {
+      font-size: 0.75em;
+      opacity: 0.7;
+      margin-bottom: 2px;
+    }
+
+    .timer-value {
+      font-size: 1.1em;
+      font-weight: 700;
     }
 
     .timer.low-time {
       color: var(--timer-low-time-color);
+      background: #ffebee;
       animation: pulse 1s infinite alternate;
     }
 
     @keyframes pulse {
       from { transform: scale(1); }
-      to   { transform: scale(1.05); }
+      to   { transform: scale(1.02); }
     }
 
-    #player-info,
-    #game-status {
-      margin: 6px 0;
+    /* Info Section */
+    .info-section {
+      width: 100%;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    #player-info {
+      font-size: 0.9em;
       font-weight: 600;
+      margin-bottom: 4px;
+      color: #2e7d32;
+    }
+
+    #game-status {
+      font-size: 0.85em;
+      color: #d32f2f;
+      min-height: 20px;
+    }
+
+    /* Chess Board */
+    .board-container {
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 1;
+      margin: 8px 0;
     }
 
     .chessboard {
+      width: 100%;
+      height: 100%;
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      width: var(--board-size);
-      height: var(--board-size);
-      border: 10px solid #5d4037;
-      border-radius: 5px;
-      margin-top: 10px;
+      border: 4px solid var(--board-border);
+      border-radius: 8px;
+      overflow: hidden;
     }
 
     .square {
-      width: calc(var(--board-size) / 8);
-      height: calc(var(--board-size) / 8);
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
     }
 
     .square.light { background: var(--light-square); }
     .square.dark  { background: var(--dark-square); }
 
+    .square.highlight {
+      box-shadow: inset 0 0 0 3px #ff9800;
+    }
+
     .piece {
       width: 100%;
       height: 100%;
-      font-size: 48px;
+      font-size: clamp(24px, 6vw, 32px);
       display: flex;
       justify-content: center;
       align-items: center;
-      cursor: grab;
+      cursor: pointer;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      transition: transform 0.1s ease;
     }
 
+    .piece:active {
+      transform: scale(1.1);
+    }
 
     .piece.white {
       color: #fff;
-      text-shadow: 0 0 2px rgba(0,0,0,.6);
+      text-shadow: 
+        -1px -1px 0 #000,  
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        0 0 3px #000;
     }
 
-    .piece.black { color: #000; }
-
-    .white-piece {
-      color: #ffffff;
-      text-shadow: 0 0 2px black; /* makes white stand out */
+    .piece.black { 
+      color: #000;
+      text-shadow: 
+        -1px -1px 0 #fff,  
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff,
+        0 0 2px #fff;
     }
 
-    .black-piece {
-      color: #000000;
+    .piece.dragging { 
+      opacity: 0.6;
+      z-index: 1000;
+      position: relative;
     }
 
-    .piece.dragging { opacity: .5; }
-
+    /* Controls */
     .game-controls {
       display: flex;
-      justify-content: center;
-      gap: 10px;
+      gap: 8px;
       margin-top: 12px;
+      width: 100%;
+      max-width: 300px;
     }
 
     button {
-      padding: 8px 14px;
+      flex: 1;
+      padding: 10px 8px;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
       background: #fff;
       cursor: pointer;
+      font-size: 0.9em;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
     }
 
-    button:hover {
-      background: #f6f6f6;
+    button:hover, button:active {
+      background: #f5f5f5;
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Mobile Specific Optimizations */
+    @media (max-width: 480px) {
+      body {
+        padding: 4px;
+      }
+      
+      .game-container {
+        padding: 12px;
+      }
+
+      .timer {
+        font-size: 0.8em;
+        padding: 6px 4px;
+      }
+
+      .timer-value {
+        font-size: 1em;
+      }
+
+      #player-info {
+        font-size: 0.85em;
+      }
+
+      #game-status {
+        font-size: 0.8em;
+      }
+
+      button {
+        font-size: 0.85em;
+        padding: 8px 6px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .piece {
+        font-size: clamp(20px, 7vw, 28px);
+      }
+      
+      .timer {
+        font-size: 0.75em;
+      }
+    }
+
+    /* Landscape orientation adjustments */
+    @media (orientation: landscape) and (max-height: 600px) {
+      body {
+        align-items: flex-start;
+        padding-top: 8px;
+      }
+      
+      .game-container {
+        max-width: 500px;
+      }
+      
+      .board-container {
+        max-width: 300px;
+      }
+    }
+
+    /* Touch feedback */
+    .square:active {
+      background-color: rgba(255, 152, 0, 0.3);
+    }
+
+    /* Loading state */
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    /* Connection status */
+    .connection-status {
+      position: fixed;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4caf50;
+      z-index: 1000;
+    }
+
+    .connection-status.disconnected {
+      background: #f44336;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
     }
   </style>
 </head>
 <body>
+  <div class="connection-status" id="connection-status"></div>
+  
   <div class="game-container">
     <div class="timer-container">
       <div class="timer white-timer">
-        White: <span id="white-timer">10:00</span>
+        <div class="timer-label">White</div>
+        <div class="timer-value" id="white-timer">10:00</div>
       </div>
       <div class="timer black-timer">
-        Black: <span id="black-timer">10:00</span>
+        <div class="timer-label">Black</div>
+        <div class="timer-value" id="black-timer">10:00</div>
       </div>
     </div>
 
-    <div id="player-info">Waiting for players...</div>
-    <div id="game-status"></div>
+    <div class="info-section">
+      <div id="player-info">Waiting for players...</div>
+      <div id="game-status"></div>
+    </div>
 
-    <div class="chessboard"></div>
+    <div class="board-container">
+      <div class="chessboard"></div>
+    </div>
 
     <div class="game-controls">
       <button id="offer-draw">Offer Draw</button>
@@ -164,8 +347,326 @@
   </div>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <!-- chess.js v0.10.3 exposes global Chess() -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-  <script src="/javascript/chess_game.js"></script>
+  <script>
+    // Enhanced Chess Game Client with Mobile Optimizations
+    const socket = io();
+    const chess = new Chess();
+
+    class MobileChessGameClient {
+      constructor() {
+        this.initializeElements();
+        this.initializeGameState();
+        this.setupEventListeners();
+        this.setupConnectionStatus();
+      }
+
+      initializeElements() {
+        this.boardElement = document.querySelector('.chessboard');
+        this.playerInfo = document.querySelector('#player-info');
+        this.gameStatus = document.querySelector('#game-status');
+        this.whiteTimerElement = document.querySelector('#white-timer');
+        this.blackTimerElement = document.querySelector('#black-timer');
+        this.connectionStatus = document.querySelector('#connection-status');
+      }
+
+      initializeGameState() {
+        this.playerRole = null;
+        this.selectedSquare = null;
+        this.draggedPiece = null;
+        this.localTimers = { white: 600, black: 600 };
+
+        this.PIECE_UNICODE = {
+          k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
+          K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟'
+        };
+
+        this.renderBoard();
+      }
+
+      setupEventListeners() {
+        this.setupSocketListeners();
+        this.setupControlButtonListeners();
+      }
+
+      setupSocketListeners() {
+        socket.on('connect', () => {
+          this.connectionStatus.classList.remove('disconnected');
+        });
+
+        socket.on('disconnect', () => {
+          this.connectionStatus.classList.add('disconnected');
+        });
+
+        socket.on('playerRole', this.handlePlayerRole.bind(this));
+        socket.on('spectatorRole', () => {
+          this.playerRole = 'spectator';
+          this.playerInfo.textContent = 'You are watching as a spectator';
+        });
+        socket.on('move', this.handleMove.bind(this));
+        socket.on('gameState', this.handleGameState.bind(this));
+        socket.on('gameOver', this.handleGameOver.bind(this));
+        socket.on('timeUp', this.handleTimeUp.bind(this));
+        socket.on('drawOffered', this.handleDrawOffer.bind(this));
+        socket.on('timerUpdate', (timers) => {
+          this.localTimers = timers;
+          this.updateTimerDisplay();
+        });
+        socket.on('invalidMove', (msg) => {
+          this.showStatus(msg, 2000);
+        });
+        socket.on('playerDisconnected', (color) => {
+          this.showStatus(`Player ${color} disconnected.`);
+        });
+      }
+
+      setupControlButtonListeners() {
+        document.querySelector('#offer-draw').addEventListener('click', () => {
+          socket.emit('offerDraw');
+        });
+
+        document.querySelector('#resign').addEventListener('click', () => {
+          if (confirm('Are you sure you want to resign?')) {
+            socket.emit('resign');
+          }
+        });
+      }
+
+      setupConnectionStatus() {
+        // Visual feedback for connection status
+        this.connectionStatus.title = 'Connected';
+      }
+
+      handlePlayerRole(role) {
+        this.playerRole = role;
+        this.playerInfo.textContent = `You are playing as ${role === 'w' ? 'White' : 'Black'}`;
+        this.renderBoard();
+      }
+
+      handleMove(gameData) {
+        chess.move(gameData.move);
+        this.localTimers = gameData.timers;
+        this.updateTimerDisplay();
+        this.clearHighlights();
+        this.renderBoard();
+      }
+
+      handleGameState(gameState) {
+        chess.load(gameState.fen);
+        this.localTimers = gameState.timers;
+        this.updateTimerDisplay();
+        this.renderBoard();
+      }
+
+      handleGameOver(message) {
+        this.showStatus(message);
+        this.playerRole = this.playerRole === 'spectator' ? 'spectator' : null;
+        this.clearHighlights();
+      }
+
+      handleTimeUp(color) {
+        const isWhite = color === 'w' || color === 'white';
+        this.showStatus(`Time's up! ${isWhite ? 'Black' : 'White'} wins on time`);
+        this.localTimers = { white: 0, black: 0 };
+        this.updateTimerDisplay();
+        this.playerRole = this.playerRole === 'spectator' ? 'spectator' : null;
+        this.clearHighlights();
+      }
+
+      handleDrawOffer() {
+        if (confirm('Opponent offers a draw. Accept?')) {
+          socket.emit('acceptDraw');
+        }
+      }
+
+      showStatus(message, timeout = 0) {
+        this.gameStatus.textContent = message;
+        if (timeout > 0) {
+          setTimeout(() => {
+            this.gameStatus.textContent = '';
+          }, timeout);
+        }
+      }
+
+      renderBoard() {
+        const board = chess.board();
+        this.boardElement.innerHTML = '';
+
+        const rows = this.playerRole === 'b' ? [...board].reverse() : board;
+
+        rows.forEach((row, rowIndex) => {
+          const cols = this.playerRole === 'b' ? [...row].reverse() : row;
+
+          cols.forEach((square, squareIndex) => {
+            const actualRow = this.playerRole === 'b' ? 7 - rowIndex : rowIndex;
+            const actualCol = this.playerRole === 'b' ? 7 - squareIndex : squareIndex;
+            const squareEl = this.createSquareElement(actualRow, actualCol, square);
+            this.boardElement.appendChild(squareEl);
+          });
+        });
+      }
+
+      createSquareElement(rowIndex, colIndex, square) {
+        const squareElement = document.createElement('div');
+        const algebraicSquare = `${String.fromCharCode(97 + colIndex)}${8 - rowIndex}`;
+
+        squareElement.classList.add(
+          'square',
+          (rowIndex + colIndex) % 2 === 0 ? 'light' : 'dark'
+        );
+        squareElement.dataset.square = algebraicSquare;
+
+        this.setupSquareEvents(squareElement, algebraicSquare);
+
+        if (square) {
+          const pieceElement = this.createPieceElement(square);
+          squareElement.appendChild(pieceElement);
+        }
+
+        return squareElement;
+      }
+
+      setupSquareEvents(squareElement, algebraicSquare) {
+        // Handle both click and touch events for better mobile support
+        const handleSquareInteraction = (e) => {
+          e.preventDefault();
+          
+          if (this.selectedSquare) {
+            // Try to make a move
+            this.attemptMove(this.selectedSquare, algebraicSquare);
+            this.clearHighlights();
+          } else if (squareElement.querySelector('.piece')) {
+            // Select piece if it's the player's turn
+            const piece = squareElement.querySelector('.piece');
+            const square = chess.get(algebraicSquare);
+            
+            if (square && this.playerRole === square.color) {
+              this.selectedSquare = algebraicSquare;
+              squareElement.classList.add('highlight');
+            }
+          }
+        };
+
+        squareElement.addEventListener('click', handleSquareInteraction);
+        squareElement.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          handleSquareInteraction(e);
+        }, { passive: false });
+
+        // Traditional drag and drop support
+        squareElement.addEventListener('dragover', (e) => e.preventDefault());
+        squareElement.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (this.draggedPiece) {
+            const from = this.draggedPiece.parentElement.dataset.square;
+            this.attemptMove(from, algebraicSquare);
+            this.draggedPiece = null;
+          }
+        });
+      }
+
+      createPieceElement(square) {
+        const pieceElement = document.createElement('div');
+        pieceElement.classList.add('piece', square.color === 'w' ? 'white' : 'black');
+
+        const key = square.color === 'w' ? square.type.toUpperCase() : square.type;
+        pieceElement.innerText = this.PIECE_UNICODE[key];
+
+        pieceElement.setAttribute('draggable', 'true');
+
+        this.setupPieceEvents(pieceElement, square);
+
+        return pieceElement;
+      }
+
+      setupPieceEvents(pieceElement, square) {
+        // Drag events
+        pieceElement.addEventListener('dragstart', (e) => {
+          if (this.playerRole !== square.color) {
+            e.preventDefault();
+            return;
+          }
+          this.draggedPiece = pieceElement;
+          pieceElement.classList.add('dragging');
+        });
+
+        pieceElement.addEventListener('dragend', () => {
+          pieceElement.classList.remove('dragging');
+        });
+
+        // Touch events with improved feedback
+        let touchStartTime;
+        
+        pieceElement.addEventListener('touchstart', (e) => {
+          if (this.playerRole !== square.color) return;
+          e.preventDefault();
+          touchStartTime = Date.now();
+          this.draggedPiece = pieceElement;
+        }, { passive: false });
+
+        pieceElement.addEventListener('touchend', (e) => {
+          if (!this.draggedPiece) return;
+          e.preventDefault();
+          
+          const touchDuration = Date.now() - touchStartTime;
+          if (touchDuration < 200) {
+            // Quick tap - treat as click
+            return;
+          }
+
+          const touch = e.changedTouches[0];
+          const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+
+          if (targetElement && targetElement.closest('.square')) {
+            const from = this.draggedPiece.parentElement.dataset.square;
+            const to = targetElement.closest('.square').dataset.square;
+            this.attemptMove(from, to);
+          }
+          
+          this.draggedPiece = null;
+        }, { passive: false });
+      }
+
+      attemptMove(from, to) {
+        const move = {
+          from: from,
+          to: to,
+          promotion: 'q'
+        };
+        socket.emit('move', move);
+        this.selectedSquare = null;
+      }
+
+      clearHighlights() {
+        document.querySelectorAll('.square.highlight').forEach(sq => {
+          sq.classList.remove('highlight');
+        });
+        this.selectedSquare = null;
+      }
+
+      updateTimerDisplay() {
+        this.whiteTimerElement.textContent = this.formatTime(this.localTimers.white);
+        this.blackTimerElement.textContent = this.formatTime(this.localTimers.black);
+
+        this.whiteTimerElement.closest('.timer').classList.toggle(
+          'low-time',
+          this.localTimers.white <= 60
+        );
+        this.blackTimerElement.closest('.timer').classList.toggle(
+          'low-time',
+          this.localTimers.black <= 60
+        );
+      }
+
+      formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+      }
+    }
+
+    // Initialize the game
+    new MobileChessGameClient();
+  </script>
 </body>
 </html>
